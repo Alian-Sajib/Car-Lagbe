@@ -1,0 +1,199 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Button,
+    Form,
+    Input,
+    InputNumber,
+    Select,
+    Upload,
+    message,
+    Row, Col, Card,
+} from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import axios from 'axios';
+import { Url } from '../../redux/actionTypes';
+
+const { Option } = Select;
+const { TextArea } = Input;
+
+
+const AddCar = () => {
+    const [form] = Form.useForm();
+    const [fileList, setFileList] = useState([]);
+    const navigate = useNavigate();
+
+    const handleUploadChange = ({ fileList: newFileList }) => {
+        setFileList(newFileList.slice(-1)); // Ensure only one file is uploaded
+    };
+    const onFinish = async (values) => {
+        const formData = new FormData();
+        const userId = localStorage.getItem('user_id');
+
+        formData.append('owner', userId);
+        formData.append('status', values.status);
+        formData.append('brand', values.brand);
+        formData.append('model', values.model);
+        formData.append('year', values.year);
+        formData.append('color', values.color);
+        formData.append('rent_price', values.rent_price);
+        formData.append('description', values.description);
+
+        if (fileList.length > 0) {
+            formData.append('image', fileList[0].originFileObj); // Append the picture
+        } else {
+            message.error("Please upload a car picture.");
+            return;
+        }
+
+        // for (let [key, value] of formData.entries()) {
+        //     console.log(`${key}:`, value);
+        // }
+        try {
+            const response = await axios.post(Url + `/cars/`, formData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`, // Token must be valid
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            if (response.status === 201) {
+                message.success('Car added successfully');
+                navigate('/'); // Redirect after success
+            }
+        } catch (error) {
+            if (error.response) {
+                console.error('Error data:', error.response.data);
+                message.error(`Failed to add the car: ${error.response.data.detail || 'Unknown error'}`);
+            } else {
+                message.error('Failed to add the car due to a network or server issue');
+                console.error('Error:', error);
+            }
+        }
+    };
+
+    const handleCancel = () => {
+        navigate(-1); // This will navigate to the previous page
+    }
+
+    return (
+
+        <div style={{ padding: '20px', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }} >
+            <Card
+                title={`Add a new  Car `}
+                bordered={false}
+                style={{ maxWidth: '800px', width: '100%', margin: '0 auto', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}
+            >
+                <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={onFinish}
+                >
+                    {/* Brand and Model Fields */}
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="brand"
+                                label="Brand"
+                                rules={[{ required: true, message: 'Please enter the car brand' }]}
+                            >
+                                <Input placeholder="Enter car brand" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="model"
+                                label="Model"
+                                rules={[{ required: true, message: 'Please enter the car model' }]}
+                            >
+                                <Input placeholder="Enter car model" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* Year and Color Fields */}
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="year"
+                                label="Year"
+                                rules={[{ required: true, message: 'Please enter the year of manufacture' }]}
+                            >
+                                <InputNumber min={1900} max={new Date().getFullYear()} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="color"
+                                label="Color"
+                                rules={[{ required: true, message: 'Please enter the car color' }]}
+                            >
+                                <Input placeholder="Enter car color" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* Status and Rent Price Fields */}
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="status"
+                                label="Status"
+                                rules={[{ required: true, message: 'Please select the car status' }]}
+                            >
+                                <Select placeholder="Select car status">
+                                    <Option value="Yes">Booked</Option>
+                                    <Option value="No">Available</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="rent_price"
+                                label="Rent Price (BDT/day)"
+                                rules={[{ required: true, message: 'Please enter the rent price' }]}
+                            >
+                                <InputNumber min={0} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* Description Field */}
+                    <Form.Item
+                        name="description"
+                        label="Description"
+                        rules={[{ required: true, message: 'Please enter the car description' }]}
+                    >
+                        <TextArea rows={4} placeholder="Enter car description" />
+                    </Form.Item>
+
+                    {/* Upload New Image Field */}
+                    <Form.Item label="Upload New Car Image" name="image">
+                        <Upload
+                            listType="picture"
+                            maxCount={1}
+                            fileList={fileList}
+                            beforeUpload={() => false} // Prevent automatic upload
+                            onChange={handleUploadChange}
+                        >
+                            <Button icon={<UploadOutlined />}>Click to Upload</Button>
+                        </Upload>
+                    </Form.Item>
+
+                    {/* Submit Button */}
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
+                            Add New Car
+                        </Button>
+                    </Form.Item>
+                </Form>
+                <Button type="dashed" danger style={{ width: '100%' }} onClick={handleCancel}>
+                    Cancel
+                </Button>
+            </Card>
+        </div>
+    );
+};
+
+export default AddCar;
