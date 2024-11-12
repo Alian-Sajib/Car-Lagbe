@@ -1,5 +1,5 @@
-import React from 'react';
-import { LogoutOutlined, ProfileOutlined, HomeOutlined, FormOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { MenuUnfoldOutlined, MenuFoldOutlined, HomeOutlined, ProfileOutlined, FormOutlined, LogoutOutlined } from '@ant-design/icons';
 import { Layout, Menu, Button } from 'antd';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -19,14 +19,38 @@ const Home = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const user_type = useSelector(state => state.user_type);
+    const [collapsed, setCollapsed] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Check screen width on mount to set initial sidebar state and detect if on mobile
+    useEffect(() => {
+        const checkScreenSize = () => {
+            if (window.innerWidth < 768) {
+                setCollapsed(true);
+                setIsMobile(true);
+            } else {
+                setIsMobile(false);
+            }
+        };
+
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
+
+    const toggleCollapsed = () => {
+        setCollapsed(!collapsed);
+    };
 
     return (
         <Layout style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Layout style={{ flex: 1, display: 'flex' }}>
                 <Sider
-                    breakpoint="lg"
-                    collapsedWidth="0"
+                    collapsed={collapsed}
+                    onCollapse={toggleCollapsed}
+                    collapsedWidth={0}
                     style={{ backgroundColor: '#001529' }}
+                    width={200}
                 >
                     <div className="demo-logo-vertical" />
                     <Menu
@@ -57,21 +81,38 @@ const Home = () => {
                 <Layout style={{ flex: 1 }}>
                     <Header
                         style={{
-                            padding: '0 20px',
-                            backgroundColor: '#001529', // Match sidebar color
+                            padding: '0 5%',
+                            backgroundColor: '#001529',
                             color: '#ffffff',
                             height: '60px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            fontSize: '18px', // Reduced font size for better responsiveness
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span role="img" aria-label="car-icon" style={{ fontSize: '24px' }}>🚗</span>
-                            <span style={{ fontWeight: 'bold', fontSize: '18px' }}>Car Lagbe?</span>
+                            <span
+                                style={{
+                                    fontWeight: 'bold',
+                                    fontSize: isMobile && !collapsed ? '16px' : '24px', // Adjust font size on mobile when sidebar is expanded
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '80%',
+                                }}
+                            >
+                                Car Lagbe?
+                            </span>
                         </div>
+                        <Button
+                            type="text"
+                            onClick={toggleCollapsed}
+                            icon={collapsed ?
+                                <MenuUnfoldOutlined style={{ fontSize: '24px', color: '#ffffff' }} /> :
+                                <MenuFoldOutlined style={{ fontSize: '24px', color: '#ffffff' }} />}
+                        />
                     </Header>
                     <Content
                         style={{

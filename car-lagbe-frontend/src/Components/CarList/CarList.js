@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { EditOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import { Card, Pagination, Row, Col, message } from 'antd';
+import { Card, Pagination, Row, Col, message, Spin } from 'antd';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { Url } from '../../redux/actionTypes';
 const { Meta } = Card;
 
 const CarList = () => {
+    const [loading, setLoading] = useState(false);
     const [cars, setCars] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -20,6 +21,7 @@ const CarList = () => {
     }, [currentPage]);
 
     const fetchCars = async (page) => {
+        setLoading(true);
         try {
             const response = await axios.get(Url + `/cars/?page=${page}`, {
                 headers: {
@@ -32,6 +34,9 @@ const CarList = () => {
         } catch (error) {
             console.error("Error fetching cars", error);
             message.error("Failed to fetch cars. Please try again later.");
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -51,6 +56,9 @@ const CarList = () => {
         navigate(`/details/${car.id}`, { state: { car } });
     };
 
+    if (loading) {
+        return <Spin />;
+    }
     return (
         <div style={{ padding: '20px' }}>
             <Row
